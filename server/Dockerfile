@@ -9,9 +9,10 @@ RUN npm install --omit=dev --ignore-scripts && \
     npm rebuild better-sqlite3 && \
     rm -rf /root/.npm
 
-COPY index.js ./
+COPY server.js ./
+COPY src ./src/
 COPY db ./db/
 
 EXPOSE 3001
 
-CMD ["node", "index.js"]
+CMD ["node", "server.js"]
