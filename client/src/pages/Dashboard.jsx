@@ -29,10 +29,28 @@ function Dashboard() {
     )
   }
 
+  // Format currency for mobile (compact) and desktop (full)
+  const formatCurrency = (value) => {
+    const num = value || 0
+    const formatted = num.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+    
+    // For mobile, use compact format if value is very large
+    if (num >= 1000000000000) {
+      return `Rp ${(num / 1000000000000).toFixed(1)}T`
+    } else if (num >= 1000000000) {
+      return `Rp ${(num / 1000000000).toFixed(1)}Milyar`
+    } else if (num >= 1000000) {
+      return `Rp ${(num / 1000000).toFixed(1)}Jt`
+    }
+    
+    return `Rp ${formatted}`
+  }
+
   const statCards = [
     {
       label: 'Total Barang',
       value: stats?.totalItems || 0,
+      displayValue: stats?.totalItems || 0,
       icon: Package,
       color: 'bg-blue-500',
       textColor: 'text-blue-600',
@@ -40,7 +58,8 @@ function Dashboard() {
     },
     {
       label: 'Total Nilai',
-      value: `Rp ${(stats?.totalValue || 0).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
+      value: stats?.totalValue || 0,
+      displayValue: formatCurrency(stats?.totalValue),
       icon: DollarSign,
       color: 'bg-green-500',
       textColor: 'text-green-600',
@@ -49,6 +68,7 @@ function Dashboard() {
     {
       label: 'Stok Rendah',
       value: stats?.lowStock || 0,
+      displayValue: stats?.lowStock || 0,
       icon: AlertTriangle,
       color: 'bg-yellow-500',
       textColor: 'text-yellow-600',
@@ -57,6 +77,7 @@ function Dashboard() {
     {
       label: 'Stok Habis',
       value: stats?.outOfStock || 0,
+      displayValue: stats?.outOfStock || 0,
       icon: XCircle,
       color: 'bg-red-500',
       textColor: 'text-red-600',
@@ -65,6 +86,7 @@ function Dashboard() {
     {
       label: 'Kategori',
       value: stats?.categories || 0,
+      displayValue: stats?.categories || 0,
       icon: Tags,
       color: 'bg-purple-500',
       textColor: 'text-purple-600',
@@ -82,7 +104,7 @@ function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6 mb-6 md:mb-8">
-        {statCards.map(({ label, value, icon: Icon, color, textColor, bgColor }) => (
+        {statCards.map(({ label, value, displayValue, icon: Icon, color, textColor, bgColor }) => (
           <div key={label} className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-slate-200">
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <div className={`${bgColor} p-2.5 md:p-3 rounded-lg`}>
@@ -90,8 +112,13 @@ function Dashboard() {
               </div>
               <TrendingUp className="w-4 h-4 text-slate-400" />
             </div>
-            <p className="text-xl md:text-2xl font-bold text-slate-800">{value}</p>
-            <p className="text-xs md:text-sm text-slate-500">{label}</p>
+            <p 
+              className="text-lg md:text-2xl font-bold text-slate-800 truncate"
+              title={typeof value === 'number' && label === 'Total Nilai' ? `Rp ${value.toLocaleString('id-ID')}` : ''}
+            >
+              {displayValue}
+            </p>
+            <p className="text-xs md:text-sm text-slate-500 mt-1">{label}</p>
           </div>
         ))}
       </div>

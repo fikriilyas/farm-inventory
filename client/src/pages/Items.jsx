@@ -21,10 +21,30 @@ function Items() {
     low_stock_threshold: 10,
     description: ''
   })
+  const [filtersExpanded, setFiltersExpanded] = useState(false)
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
 
   useEffect(() => {
     loadData()
   }, [search, categoryFilter, stockFilter])
+
+  useEffect(() => {
+    const handleKeyboardOpen = () => {
+      setIsKeyboardOpen(true)
+    }
+    
+    const handleKeyboardClose = () => {
+      setIsKeyboardOpen(false)
+    }
+    
+    window.visualViewport?.addEventListener('resize', handleKeyboardOpen)
+    window.addEventListener('blur', handleKeyboardClose)
+    
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleKeyboardOpen)
+      window.removeEventListener('blur', handleKeyboardClose)
+    }
+  }, [])
 
   const loadData = async () => {
     try {
@@ -111,8 +131,8 @@ function Items() {
 
   return (
     <div className="p-4 md:p-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      {/* Desktop Header - Visible on md and above */}
+      <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Barang Inventaris</h1>
           <p className="text-slate-500">Kelola inventaris toko pertanian Anda</p>
@@ -126,28 +146,59 @@ function Items() {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cari barang..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500"
-              />
-            </div>
-          </div>
+      {/* Mobile Header - Compact */}
+      <div className="md:hidden flex items-center justify-between mb-4">
+        <h1 className="text-lg font-bold text-slate-800">Barang</h1>
+        <span className="text-xs text-slate-500">{items.length} items</span>
+      </div>
 
+      {/* Sticky Search Bar */}
+      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm shadow-sm border-b border-slate-200 pt-4 md:pt-6 pb-3 md:pb-4 px-4 md:px-6 md:mb-6">
+        <div className="flex items-center gap-2">
+          {/* Search Input - Full Width */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Cari barang..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-10 py-2.5 px-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500 bg-white"
+              aria-label="Cari barang"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                aria-label="Hapus pencarian"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+          
+          {/* Filter Toggle Button (All Viewports) */}
+          <button
+            onClick={() => setFiltersExpanded(!filtersExpanded)}
+            className="flex-shrink-0 p-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 touch-manipulation"
+            aria-label={filtersExpanded ? 'Sembunyikan filter' : 'Tampilkan filter'}
+            aria-expanded={filtersExpanded}
+          >
+            <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Collapsible Filters Section */}
+      <div className={`${filtersExpanded ? 'block' : 'hidden'} bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6`}>
+        <div className="flex flex-col sm:flex-row gap-3">
           {/* Category Filter */}
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500 bg-white"
+            className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500 bg-white"
           >
             <option value="">Semua Kategori</option>
             {categories.map(cat => (
@@ -159,7 +210,7 @@ function Items() {
           <select
             value={stockFilter}
             onChange={(e) => setStockFilter(e.target.value)}
-            className="px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500 bg-white"
+            className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500 bg-white"
           >
             <option value="">Semua Status Stok</option>
             <option value="in">Ada Stok</option>
@@ -170,7 +221,10 @@ function Items() {
       </div>
 
       {/* Items Container */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div 
+        className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+        style={{ paddingBottom: isKeyboardOpen ? '200px' : '0' }}
+      >
         {loading ? (
           <div className="p-12 flex justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-farm-500"></div>
@@ -498,6 +552,15 @@ function Items() {
           </div>
         </div>
       )}
+
+      {/* Floating Action Button - Mobile Only */}
+      <button
+        onClick={() => { resetForm(); setShowModal(true) }}
+        className={`md:hidden fixed bottom-20 right-4 z-40 w-14 h-14 bg-teal-500 text-white rounded-full shadow-lg hover:bg-teal-600 transition-all duration-200 touch-manipulation flex items-center justify-center ${showModal ? 'opacity-0 pointer-events-none' : ''}`}
+        aria-label="Tambah barang baru"
+      >
+        <Plus className="w-7 h-7" />
+      </button>
     </div>
   )
 }

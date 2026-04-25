@@ -77,3 +77,21 @@ html, body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Floating Action Button Styles */
+@media (max-width: 767px) {
+  .fab-shadow {
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4);
+  }
+  
+  .fab-shadow:hover {
+    box-shadow: 0 6px 16px rgba(20, 184, 166, 0.5);
+  }
+}
+
+/* Ensure FAB doesn't overlap with bottom navigation */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: 80px;
+  }
+}
