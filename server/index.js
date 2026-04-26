@@ -363,6 +363,83 @@ app.delete('/api/items/:id', requireAuth, (req, res) => {
   }
 });
 
+// Batch add items
+app.post('/api/items/batch', requireAuth, (req, res) => {
+  try {
+    const { items } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Items array is required' });
+    }
+
+    let processed = 0;
+    let updated = 0;
+    let created = 0;
+    let totalValue = 0;
+    const details = [];
+
+    const runBatch = db.transaction(() => {
+      for (const item of items) {
+        if (item.mode === 'existing') {
+          const existingItem = db.prepare('SELECT * FROM items WHERE id = ?').get(item.itemId);
+
+          if (!existingItem) {
+            throw new Error(`Item with id ${item.itemId} not found`);
+          }
+
+          const newQuantity = existingItem.quantity + item.quantity;
+          let priceToUse = existingItem.purchase_price;
+
+          if (item.updatePrice && item.newPrice !== null) {
+            priceToUse = item.newPrice;
+            db.prepare(`
+              UPDATE items
+              SET quantity = ?, purchase_price = ?, selling_price = ?, updated_at = CURRENT_TIMESTAMP
+              WHERE id = ?
+            `).run(newQuantity, item.newPrice, item.newPrice * 1.2, item.itemId);
+          } else {
+            db.prepare(`
+              UPDATE items
+              SET quantity = ?, updated_at = CURRENT_TIMESTAMP
+              WHERE id = ?
+            `).run(newQuantity, item.itemId);
+          }
+
+          totalValue += item.quantity * priceToUse;
+          updated++;
+          details.push({ itemId: item.itemId, action: 'updated', newQuantity });
+        } else if (item.mode === 'new') {
+          const purchasePrice = item.price;
+          const sellingPrice = item.price * 1.2;
+
+          const result = db.prepare(`
+            INSERT INTO items (name, quantity, purchase_price, selling_price, unit, category_id, low_stock_threshold, description)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(item.name, item.quantity, purchasePrice, sellingPrice, item.unit || 'pcs', item.categoryId, 10, item.description || '');
+
+          totalValue += item.quantity * purchasePrice;
+          created++;
+          details.push({ itemId: result.lastInsertRowid, action: 'created', newItemId: result.lastInsertRowid });
+        }
+        processed++;
+      }
+    });
+
+    runBatch();
+
+    res.json({
+      success: true,
+      processed,
+      updated,
+      created,
+      totalValue,
+      details
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get dashboard stats
 app.get('/api/stats', requireAuth, (req, res) => {
   try {
