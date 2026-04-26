@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Package, Tags, Leaf, Menu, X, LogOut, User } from 'lucide-react'
+import { LayoutDashboard, Package, Tags, Leaf, Menu, X, LogOut, User, PackagePlus } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 const navItems = [
   { path: '/dashboard', label: 'Dasbor', icon: LayoutDashboard },
   { path: '/items', label: 'Barang', icon: Package },
+  { path: '/batch-add', label: 'Tambah Batch', icon: PackagePlus },
   { path: '/categories', label: 'Kategori', icon: Tags },
 ]
 

@@ -63,5 +63,18 @@ export const deleteItem = (id) => fetchWithCredentials(`${API_BASE}/items/${id}`
   method: 'DELETE'
 }).then(res => res.json())
 
+// Batch operations
+export const batchAddItems = (batchData) =>
+  fetchWithCredentials(`${API_BASE}/items/batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(batchData)
+  }).then(res => {
+    if (!res.ok) {
+      return res.json().then(err => Promise.reject(err.error || 'Batch processing failed'))
+    }
+    return res.json()
+  })
+
 // Stats
 export const getStats = () => fetchWithCredentials(`${API_BASE}/stats`).then(res => res.json())
