@@ -133,7 +133,7 @@ function BatchAdd() {
       if (item.quantity > 0) {
         totalQuantity += item.quantity
         if (item.mode === 'existing') {
-          const price = item.updatePrice ? item.newPrice : item.selectedProduct?.price || 0
+          const price = item.updatePrice ? item.newPrice : item.selectedProduct?.purchase_price || 0
           totalValue += item.quantity * price
         } else {
           totalValue += item.quantity * (item.price || 0)
@@ -441,7 +441,7 @@ function ProductRow({
                       <p className="text-sm font-medium text-slate-800">{product.name}</p>
                       <p className="text-xs text-slate-500">{product.category_name}</p>
                     </div>
-                    <span className="text-sm text-slate-600">Rp {product.price?.toLocaleString('id-ID')}</span>
+                    <span className="text-sm text-slate-600">Rp {product.purchase_price?.toLocaleString('id-ID')}</span>
                   </div>
                 ))}
               </div>
@@ -454,7 +454,7 @@ function ProductRow({
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium text-slate-800">{item.selectedProduct.name}</span>
                 <span className="text-sm text-slate-600">
-                  Rp {item.selectedProduct.price?.toLocaleString('id-ID')} / {item.selectedProduct.unit}
+                  Rp {item.selectedProduct.purchase_price?.toLocaleString('id-ID')} / {item.selectedProduct.unit}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-500">
