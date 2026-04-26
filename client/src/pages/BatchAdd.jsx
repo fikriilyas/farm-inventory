@@ -464,61 +464,65 @@ function ProductRow({
             </div>
           )}
 
-          {/* Quantity and Price Update */}
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-xs text-slate-500 mb-1">Quantity</label>
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={item.quantity || ''}
-                onChange={(e) => onQuantityChange(index, e.target.value)}
-                placeholder="0"
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs text-slate-500 mb-1">Satuan</label>
-              <input
-                type="text"
-                value={item.selectedProduct?.unit || 'pcs'}
-                disabled
-                className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-600"
-              />
-            </div>
-          </div>
+          {/* Quantity and Price Update - Only show when product is selected */}
+          {item.selectedProduct && (
+            <>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs text-slate-500 mb-1">Quantity</label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={item.quantity || ''}
+                    onChange={(e) => onQuantityChange(index, e.target.value)}
+                    placeholder="0"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs text-slate-500 mb-1">Satuan</label>
+                  <input
+                    type="text"
+                    value={item.selectedProduct?.unit || 'pcs'}
+                    disabled
+                    className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-600"
+                  />
+                </div>
+              </div>
 
-          {/* Price Update Option */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id={`update-price-${item.id}`}
-              checked={item.updatePrice}
-              onChange={(e) => onPriceUpdateToggle(index, e.target.checked)}
-              className="w-4 h-4 text-farm-500 rounded focus:ring-farm-500"
-            />
-            <label
-              htmlFor={`update-price-${item.id}`}
-              className="text-sm text-slate-600 cursor-pointer"
-            >
-              Update harga menjadi:
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="100"
-              value={item.newPrice || ''}
-              onChange={(e) => onNewPriceChange(index, e.target.value)}
-              disabled={!item.updatePrice}
-              placeholder="Rp 0"
-              className={`flex-1 px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 ${
-                item.updatePrice
-                  ? 'border-farm-500 focus:ring-farm-500'
-                  : 'border-slate-200 bg-slate-100'
-              }`}
-            />
-          </div>
+              {/* Price Update Option */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id={`update-price-${item.id}`}
+                  checked={item.updatePrice}
+                  onChange={(e) => onPriceUpdateToggle(index, e.target.checked)}
+                  className="w-4 h-4 text-farm-500 rounded focus:ring-farm-500"
+                />
+                <label
+                  htmlFor={`update-price-${item.id}`}
+                  className="text-sm text-slate-600 cursor-pointer"
+                >
+                  Update harga menjadi:
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="100"
+                  value={item.newPrice || ''}
+                  onChange={(e) => onNewPriceChange(index, e.target.value)}
+                  disabled={!item.updatePrice}
+                  placeholder="Rp 0"
+                  className={`flex-1 px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 ${
+                    item.updatePrice
+                      ? 'border-farm-500 focus:ring-farm-500'
+                      : 'border-slate-200 bg-slate-100'
+                  }`}
+                />
+              </div>
+            </>
+          )}
         </div>
       )}
 
