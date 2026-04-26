@@ -115,4 +115,112 @@ const remove = (id) => {
   }
 };
 
-module.exports = { getAll, getById, create, update, remove };
+const batchAdd = (batchData) => {
+  try {
+    const { items } = batchData;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return { success: false, error: 'Items array is required' };
+    }
+
+    let processed = 0;
+    let updated = 0;
+    let created = 0;
+    let totalValue = 0;
+    const details = [];
+
+    const runBatch = db.transaction(() => {
+      for (const item of items) {
+        if (item.mode === 'existing') {
+          // Get existing item
+          const existingItem = db.prepare(`
+            SELECT * FROM items WHERE id = ?
+          `).get(item.itemId);
+
+          if (!existingItem) {
+            throw new Error(`Item with id ${item.itemId} not found`);
+          }
+
+          // Calculate new quantity
+          const newQuantity = existingItem.quantity + item.quantity;
+
+          // Calculate price for total value
+          let priceToUse = existingItem.purchase_price;
+          if (item.updatePrice && item.newPrice !== null) {
+            priceToUse = item.newPrice;
+          }
+
+          // Update item
+          if (item.updatePrice && item.newPrice !== null) {
+            db.prepare(`
+              UPDATE items
+              SET quantity = ?, purchase_price = ?, selling_price = ?, updated_at = CURRENT_TIMESTAMP
+              WHERE id = ?
+            `).run(newQuantity, item.newPrice, item.newPrice * 1.2, item.itemId);
+          } else {
+            db.prepare(`
+              UPDATE items
+              SET quantity = ?, updated_at = CURRENT_TIMESTAMP
+              WHERE id = ?
+            `).run(newQuantity, item.itemId);
+          }
+
+          totalValue += item.quantity * priceToUse;
+          updated++;
+          details.push({
+            itemId: item.itemId,
+            action: 'updated',
+            newQuantity
+          });
+        } else if (item.mode === 'new') {
+          // Create new item
+          const stmt = db.prepare(`
+            INSERT INTO items (name, quantity, purchase_price, selling_price, unit, category_id, low_stock_threshold, description)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `);
+
+          const purchasePrice = item.price;
+          const sellingPrice = item.price * 1.2;
+
+          const result = stmt.run(
+            item.name,
+            item.quantity,
+            purchasePrice,
+            sellingPrice,
+            item.unit || 'pcs',
+            item.categoryId,
+            10,
+            item.description || ''
+          );
+
+          totalValue += item.quantity * purchasePrice;
+          created++;
+          details.push({
+            itemId: result.lastInsertRowid,
+            action: 'created',
+            newItemId: result.lastInsertRowid
+          });
+        }
+        processed++;
+      }
+    });
+
+    runBatch();
+
+    return {
+      success: true,
+      data: {
+        success: true,
+        processed,
+        updated,
+        created,
+        totalValue,
+        details
+      }
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+module.exports = { getAll, getById, create, update, remove, batchAdd };

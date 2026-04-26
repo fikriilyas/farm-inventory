@@ -55,4 +55,14 @@ const remove = (req, res) => {
   res.json(result.data);
 };
 
-module.exports = { getAll, getById, create, update, remove };
+const batchAdd = (req, res) => {
+  const result = itemService.batchAdd(req.body);
+
+  if (!result.success) {
+    return res.status(500).json({ error: result.error });
+  }
+
+  res.json(result.data);
+};
+
+module.exports = { getAll, getById, create, update, remove, batchAdd };
