@@ -3,6 +3,19 @@ import { Plus, X, Search, Package, AlertTriangle, CheckCircle, PackagePlus } fro
 import { getItems, getCategories, batchAddItems } from '../lib/api'
 
 function BatchAdd() {
+  const createEmptyRow = () => ({
+    id: Date.now() + Math.random(),
+    mode: 'existing',
+    selectedProduct: null,
+    quantity: 0,
+    updatePrice: false,
+    newPrice: null,
+    newName: '',
+    newCategoryId: null,
+    newUnit: 'pcs',
+    price: 0
+  })
+
   const [batchItems, setBatchItems] = useState([createEmptyRow()])
   const [categories, setCategories] = useState([])
   const [searchCache, setSearchCache] = useState({})
@@ -22,19 +35,6 @@ function BatchAdd() {
       console.error('Failed to load categories:', error)
     }
   }
-
-  const createEmptyRow = () => ({
-    id: Date.now() + Math.random(),
-    mode: 'existing',
-    selectedProduct: null,
-    quantity: 0,
-    updatePrice: false,
-    newPrice: null,
-    newName: '',
-    newCategoryId: null,
-    newUnit: 'pcs',
-    price: 0
-  })
 
   const addProductRow = () => {
     setBatchItems([...batchItems, createEmptyRow()])
