@@ -51,7 +51,7 @@ function SaleProductModal({ isOpen, onClose, onAdd }) {
   const handleSelectProduct = (product) => {
     setSelectedProduct(product)
     setSearchQuery(product.name)
-    setUnitPrice(product.selling_price)
+    setUnitPrice(Math.round(product.selling_price))
     setShowResults(false)
     setErrors({})
   }
@@ -62,13 +62,17 @@ function SaleProductModal({ isOpen, onClose, onAdd }) {
     if (!selectedProduct) {
       newErrors.product = 'Pilih produk terlebih dahulu'
     }
-    if (!quantity || quantity <= 0) {
+    const qty = parseInt(quantity) || 0
+    const price = parseFloat(unitPrice) || 0
+    const roundedPrice = Math.round(price)
+
+    if (qty <= 0) {
       newErrors.quantity = 'Quantity harus lebih dari 0'
     }
-    if (selectedProduct && quantity > selectedProduct.quantity) {
+    if (selectedProduct && qty > selectedProduct.quantity) {
       newErrors.quantity = `Stok tidak cukup (tersedia: ${selectedProduct.quantity})`
     }
-    if (!unitPrice || unitPrice <= 0) {
+    if (roundedPrice <= 0) {
       newErrors.unitPrice = 'Harga harus lebih dari 0'
     }
 
@@ -81,12 +85,15 @@ function SaleProductModal({ isOpen, onClose, onAdd }) {
 
     if (!validate()) return
 
+    const qty = parseInt(quantity) || 0
+    const price = Math.round(parseFloat(unitPrice) || 0)
+
     onAdd({
       item_id: selectedProduct.id,
       name: selectedProduct.name,
       unit: selectedProduct.unit,
-      quantity: parseInt(quantity),
-      unit_price: parseFloat(unitPrice),
+      quantity: qty,
+      unit_price: price,
       purchase_price: selectedProduct.purchase_price,
       stock: selectedProduct.quantity
     })
@@ -216,7 +223,7 @@ function SaleProductModal({ isOpen, onClose, onAdd }) {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-farm-700">Subtotal:</span>
                 <span className="text-lg font-bold text-farm-700">
-                  Rp {(quantity * unitPrice)?.toLocaleString('id-ID')}
+                  Rp {(parseInt(quantity) * Math.round(parseFloat(unitPrice) || 0))?.toLocaleString('id-ID')}
                 </span>
               </div>
             </div>
