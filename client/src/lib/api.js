@@ -76,5 +76,18 @@ export const batchAddItems = (items) =>
     return res.json()
   })
 
+// Sales
+export const createSale = (saleData) =>
+  fetchWithCredentials(`${API_BASE}/sales`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(saleData)
+  }).then(res => {
+    if (!res.ok) {
+      return res.json().then(err => Promise.reject(err.error || 'Sale failed'))
+    }
+    return res.json()
+  })
+
 // Stats
 export const getStats = () => fetchWithCredentials(`${API_BASE}/stats`).then(res => res.json())

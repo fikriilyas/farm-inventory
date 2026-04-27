@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Items from './pages/Items'
 import Categories from './pages/Categories'
 import BatchAdd from './pages/BatchAdd'
+import Sales from './pages/Sales'
 import Login from './pages/Login'
 
 // Protected Route component
@@ -48,6 +49,7 @@ function App() {
             <Route path="items" element={<Items />} />
             <Route path="categories" element={<Categories />} />
             <Route path="batch-add" element={<BatchAdd />} />
+            <Route path="sales" element={<Sales />} />
           </Route>
         </Routes>
       </BrowserRouter>

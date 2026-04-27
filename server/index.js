@@ -59,6 +59,25 @@ db.exec(`
     role TEXT DEFAULT 'officer',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS sales (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    total_amount REAL NOT NULL DEFAULT 0,
+    total_profit REAL NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS sale_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sale_id INTEGER NOT NULL,
+    item_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    unit_price REAL NOT NULL,
+    purchase_price REAL NOT NULL,
+    subtotal REAL NOT NULL,
+    FOREIGN KEY (sale_id) REFERENCES sales(id),
+    FOREIGN KEY (item_id) REFERENCES items(id)
+  );
 `);
 
 // Migration: Check if old 'price' column exists and migrate to purchase_price/selling_price
@@ -439,6 +458,59 @@ app.post('/api/items/batch', requireAuth, (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Create sale
+app.post('/api/sales', requireAuth, (req, res) => {
+  try {
+    const { items } = req.body;
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Items array is required' });
+    }
+
+    const runSale = db.transaction(() => {
+      let totalAmount = 0;
+      let totalProfit = 0;
+      const saleDetails = [];
+
+      for (const entry of items) {
+        const item = db.prepare('SELECT * FROM items WHERE id = ?').get(entry.item_id);
+        if (!item) throw new Error(`Item ${entry.item_id} not found`);
+        if (item.quantity < entry.quantity) {
+          throw new Error(`Stok ${item.name} tidak cukup (tersedia: ${item.quantity})`);
+        }
+
+        const quantity = entry.quantity;
+        const unitPrice = entry.unit_price || item.selling_price;
+        const subtotal = quantity * unitPrice;
+        const profit = (unitPrice - item.purchase_price) * quantity;
+
+        db.prepare('UPDATE items SET quantity = quantity - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(quantity, entry.item_id);
+
+        totalAmount += subtotal;
+        totalProfit += profit;
+        saleDetails.push({ item_id: item.id, name: item.name, quantity, unit_price: unitPrice, subtotal });
+      }
+
+      const result = db.prepare('INSERT INTO sales (total_amount, total_profit) VALUES (?, ?)').run(totalAmount, totalProfit);
+      const saleId = result.lastInsertRowid;
+
+      for (const entry of items) {
+        const item = db.prepare('SELECT * FROM items WHERE id = ?').get(entry.item_id);
+        db.prepare(`
+          INSERT INTO sale_items (sale_id, item_id, quantity, unit_price, purchase_price, subtotal)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(saleId, entry.item_id, entry.quantity, entry.unit_price || item.selling_price, item.purchase_price, entry.quantity * (entry.unit_price || item.selling_price));
+      }
+
+      return { sale_id: saleId, total_amount: totalAmount, total_profit: totalProfit, items: saleDetails };
+    });
+
+    const result = runSale();
+    res.json({ ...result, success: true });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 
