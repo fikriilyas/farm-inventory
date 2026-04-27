@@ -64,11 +64,11 @@ export const deleteItem = (id) => fetchWithCredentials(`${API_BASE}/items/${id}`
 }).then(res => res.json())
 
 // Batch operations
-export const batchAddItems = (batchData) =>
+export const batchAddItems = (items) =>
   fetchWithCredentials(`${API_BASE}/items/batch`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(batchData)
+    body: JSON.stringify({ items })
   }).then(res => {
     if (!res.ok) {
       return res.json().then(err => Promise.reject(err.error || 'Batch processing failed'))

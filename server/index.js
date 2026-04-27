@@ -380,42 +380,43 @@ app.post('/api/items/batch', requireAuth, (req, res) => {
 
     const runBatch = db.transaction(() => {
       for (const item of items) {
-        if (item.mode === 'existing') {
-          const existingItem = db.prepare('SELECT * FROM items WHERE id = ?').get(item.itemId);
+        // Find product by name + category_id
+        const existingItem = db.prepare(`
+          SELECT * FROM items WHERE LOWER(name) = LOWER(?) AND category_id = ?
+        `).get(item.name, item.category_id);
 
-          if (!existingItem) {
-            throw new Error(`Item with id ${item.itemId} not found`);
-          }
-
+        if (existingItem) {
+          // Product exists - add quantity and optionally update price
           const newQuantity = existingItem.quantity + item.quantity;
           let priceToUse = existingItem.purchase_price;
 
-          if (item.updatePrice && item.newPrice !== null) {
-            priceToUse = item.newPrice;
+          if (item.update_price && item.purchase_price !== null) {
+            priceToUse = item.purchase_price;
             db.prepare(`
               UPDATE items
               SET quantity = ?, purchase_price = ?, selling_price = ?, updated_at = CURRENT_TIMESTAMP
               WHERE id = ?
-            `).run(newQuantity, item.newPrice, item.newPrice * 1.2, item.itemId);
+            `).run(newQuantity, item.purchase_price, item.purchase_price * 1.2, existingItem.id);
           } else {
             db.prepare(`
               UPDATE items
               SET quantity = ?, updated_at = CURRENT_TIMESTAMP
               WHERE id = ?
-            `).run(newQuantity, item.itemId);
+            `).run(newQuantity, existingItem.id);
           }
 
           totalValue += item.quantity * priceToUse;
           updated++;
-          details.push({ itemId: item.itemId, action: 'updated', newQuantity });
-        } else if (item.mode === 'new') {
-          const purchasePrice = item.price;
-          const sellingPrice = item.price * 1.2;
+          details.push({ itemId: existingItem.id, action: 'updated', newQuantity });
+        } else {
+          // Product doesn't exist - create new
+          const purchasePrice = item.purchase_price;
+          const sellingPrice = item.purchase_price * 1.2;
 
           const result = db.prepare(`
             INSERT INTO items (name, quantity, purchase_price, selling_price, unit, category_id, low_stock_threshold, description)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          `).run(item.name, item.quantity, purchasePrice, sellingPrice, item.unit || 'pcs', item.categoryId, 10, item.description || '');
+          `).run(item.name, item.quantity, purchasePrice, sellingPrice, item.unit || 'pcs', item.category_id, 10, item.description || '');
 
           totalValue += item.quantity * purchasePrice;
           created++;
