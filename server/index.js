@@ -461,6 +461,52 @@ app.post('/api/items/batch', requireAuth, (req, res) => {
   }
 });
 
+// Get sales by date
+app.get('/api/sales', requireAuth, (req, res) => {
+  try {
+    const date = req.query.date || new Date().toISOString().split('T')[0];
+
+    const sales = db.prepare(`
+      SELECT s.id, s.total_amount, s.total_profit, s.created_at,
+             (SELECT COUNT(*) FROM sale_items WHERE sale_id = s.id) as item_count
+      FROM sales s
+      WHERE DATE(s.created_at) = ?
+      ORDER BY s.created_at DESC
+    `).all(date);
+
+    const summary = db.prepare(`
+      SELECT COUNT(*) as transaction_count,
+             COALESCE(SUM(total_amount), 0) as total_omset,
+             COALESCE(SUM(total_profit), 0) as total_profit
+      FROM sales
+      WHERE DATE(created_at) = ?
+    `).get(date);
+
+    res.json({ sales, summary });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get sale detail
+app.get('/api/sales/:id', requireAuth, (req, res) => {
+  try {
+    const sale = db.prepare('SELECT * FROM sales WHERE id = ?').get(req.params.id);
+    if (!sale) return res.status(404).json({ error: 'Sale not found' });
+
+    const items = db.prepare(`
+      SELECT si.*, i.name as item_name, i.unit as item_unit
+      FROM sale_items si
+      LEFT JOIN items i ON si.item_id = i.id
+      WHERE si.sale_id = ?
+    `).all(req.params.id);
+
+    res.json({ ...sale, items });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Create sale
 app.post('/api/sales', requireAuth, (req, res) => {
   try {

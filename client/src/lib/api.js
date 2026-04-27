@@ -77,6 +77,15 @@ export const batchAddItems = (items) =>
   })
 
 // Sales
+export const getSales = (date) =>
+  fetchWithCredentials(`${API_BASE}/sales?date=${date}`).then(res => res.json())
+
+export const getSaleDetail = (id) =>
+  fetchWithCredentials(`${API_BASE}/sales/${id}`).then(res => {
+    if (!res.ok) return Promise.reject(new Error('Sale not found'))
+    return res.json()
+  })
+
 export const createSale = (saleData) =>
   fetchWithCredentials(`${API_BASE}/sales`, {
     method: 'POST',
