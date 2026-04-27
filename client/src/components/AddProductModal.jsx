@@ -13,6 +13,7 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
     quantity: 0,
     unit: 'pcs',
     purchase_price: 0,
+    selling_price: 0,
     update_price: false
   })
   const [errors, setErrors] = useState({})
@@ -43,6 +44,7 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
       quantity: 0,
       unit: 'pcs',
       purchase_price: 0,
+      selling_price: 0,
       update_price: false
     })
     setErrors({})
@@ -51,7 +53,7 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
   const handleSearchChange = async (e) => {
     const query = e.target.value
     setSearchQuery(query)
-    setFormData({ ...formData, name: query })
+    setFormData(prev => ({ ...prev, name: query }))
 
     if (query.length < 2) {
       setSearchResults([])
@@ -70,11 +72,12 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
 
   const handleSelectProduct = (product) => {
     setFormData({
-      ...formData,
       name: product.name,
       category_id: product.category_id,
+      quantity: 0,
       unit: product.unit || 'pcs',
       purchase_price: product.purchase_price,
+      selling_price: product.selling_price,
       update_price: false
     })
     setSearchQuery(product.name)
@@ -82,7 +85,7 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
   }
 
   const handleInputChange = (field, value) => {
-    setFormData({ ...formData, [field]: value })
+    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   const validate = () => {
@@ -116,6 +119,7 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
       quantity: parseInt(formData.quantity),
       unit: formData.unit,
       purchase_price: parseFloat(formData.purchase_price),
+      selling_price: parseFloat(formData.selling_price),
       update_price: formData.update_price
     })
 
@@ -250,25 +254,8 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
             </div>
           </div>
 
-          {/* Purchase Price */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Harga Beli (Rp) *</label>
-            <input
-              type="number"
-              min="0"
-              step="100"
-              value={formData.purchase_price || ''}
-              onChange={(e) => handleInputChange('purchase_price', e.target.value)}
-              placeholder="0"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500 ${
-                errors.purchase_price ? 'border-red-300' : 'border-slate-200'
-              }`}
-            />
-            {errors.purchase_price && <p className="text-xs text-red-600 mt-1">{errors.purchase_price}</p>}
-          </div>
-
-          {/* Update Price Option */}
-          <div className="flex items-center gap-2">
+          {/* Update Price Option - Toggle */}
+          <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
             <input
               type="checkbox"
               id="update_price_batch"
@@ -278,11 +265,51 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
             />
             <label
               htmlFor="update_price_batch"
-              className="text-sm text-slate-600 cursor-pointer"
+              className="text-sm text-slate-700 cursor-pointer font-medium"
             >
               Update harga produk yang sudah ada
             </label>
           </div>
+
+          {/* Price Fields - Only visible when update_price is checked */}
+          {formData.update_price ? (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Harga Beli (Rp) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="100"
+                  value={formData.purchase_price || ''}
+                  onChange={(e) => handleInputChange('purchase_price', e.target.value)}
+                  placeholder="0"
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500 ${
+                    errors.purchase_price ? 'border-red-300' : 'border-farm-500'
+                  }`}
+                />
+                {errors.purchase_price && <p className="text-xs text-red-600 mt-1">{errors.purchase_price}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Harga Jual (Rp) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="100"
+                  value={formData.selling_price || ''}
+                  onChange={(e) => handleInputChange('selling_price', e.target.value)}
+                  placeholder="0"
+                  className="w-full px-4 py-2.5 border border-farm-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-100 p-3 rounded-lg border border-slate-200">
+              <p className="text-sm text-slate-600">
+                <span className="font-medium">Harga saat ini:</span> tidak akan diubah
+              </p>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">

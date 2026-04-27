@@ -20,6 +20,7 @@ function BatchAdd() {
       quantity: productData.quantity,
       unit: productData.unit,
       purchase_price: productData.purchase_price,
+      selling_price: productData.selling_price,
       update_price: productData.update_price
     }
     setBatchItems([...batchItems, newItem])
@@ -137,7 +138,8 @@ function BatchAdd() {
                   <th className="text-left px-4 py-3 font-medium text-slate-600">Produk</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-600 hidden md:table-cell">Kategori</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-600">Quantity</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 hidden md:table-cell">Harga</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 hidden md:table-cell">Harga Beli</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 hidden md:table-cell">Harga Jual</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-600">Total</th>
                   <th className="text-right px-4 py-3 font-medium text-slate-600">Aksi</th>
                 </tr>
@@ -185,6 +187,9 @@ function BatchAdd() {
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">
                       <span className="text-slate-600">Rp {item.purchase_price?.toLocaleString('id-ID')}</span>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      <span className="text-slate-600">Rp {item.selling_price?.toLocaleString('id-ID')}</span>
                     </td>
                     <td className="px-4 py-3">
                       <span className="font-medium text-slate-800">

@@ -392,11 +392,12 @@ app.post('/api/items/batch', requireAuth, (req, res) => {
 
           if (item.update_price && item.purchase_price !== null) {
             priceToUse = item.purchase_price;
+            const sellingPrice = item.selling_price || item.purchase_price * 1.2;
             db.prepare(`
               UPDATE items
               SET quantity = ?, purchase_price = ?, selling_price = ?, updated_at = CURRENT_TIMESTAMP
               WHERE id = ?
-            `).run(newQuantity, item.purchase_price, item.purchase_price * 1.2, existingItem.id);
+            `).run(newQuantity, item.purchase_price, sellingPrice, existingItem.id);
           } else {
             db.prepare(`
               UPDATE items
@@ -411,7 +412,7 @@ app.post('/api/items/batch', requireAuth, (req, res) => {
         } else {
           // Product doesn't exist - create new
           const purchasePrice = item.purchase_price;
-          const sellingPrice = item.purchase_price * 1.2;
+          const sellingPrice = item.selling_price || item.purchase_price * 1.2;
 
           const result = db.prepare(`
             INSERT INTO items (name, quantity, purchase_price, selling_price, unit, category_id, low_stock_threshold, description)
