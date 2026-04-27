@@ -188,11 +188,10 @@ function SaleProductModal({ isOpen, onClose, onAdd }) {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Quantity *</label>
               <input
-                type="number"
-                min="1"
-                max={selectedProduct?.quantity || 1}
+                type="text"
+                inputMode="numeric"
                 value={quantity || ''}
-                onChange={(e) => setQuantity(e.target.value)}
+                onChange={(e) => setQuantity(e.target.value.replace(/\D/g, ''))}
                 placeholder="0"
                 className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500 ${
                   errors.quantity ? 'border-red-300' : 'border-slate-200'
@@ -203,11 +202,10 @@ function SaleProductModal({ isOpen, onClose, onAdd }) {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Harga Jual (Rp) *</label>
               <input
-                type="number"
-                min="1"
-                step="100"
+                type="text"
+                inputMode="decimal"
                 value={unitPrice || ''}
-                onChange={(e) => setUnitPrice(e.target.value)}
+                onChange={(e) => setUnitPrice(e.target.value.replace(/[^\d.]/g, ''))}
                 placeholder="0"
                 className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500 ${
                   errors.unitPrice ? 'border-red-300' : 'border-slate-200'
