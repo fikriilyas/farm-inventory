@@ -131,75 +131,45 @@ const batchAdd = (batchData) => {
 
     const runBatch = db.transaction(() => {
       for (const item of items) {
-        if (item.mode === 'existing') {
-          // Get existing item
-          const existingItem = db.prepare(`
-            SELECT * FROM items WHERE id = ?
-          `).get(item.itemId);
+        const existingItem = db.prepare(`
+          SELECT * FROM items WHERE LOWER(name) = LOWER(?) AND category_id = ?
+        `).get(item.name, item.category_id);
 
-          if (!existingItem) {
-            throw new Error(`Item with id ${item.itemId} not found`);
-          }
-
-          // Calculate new quantity
+        if (existingItem) {
           const newQuantity = existingItem.quantity + item.quantity;
-
-          // Calculate price for total value
           let priceToUse = existingItem.purchase_price;
-          if (item.updatePrice && item.newPrice !== null) {
-            priceToUse = item.newPrice;
-          }
 
-          // Update item
-          if (item.updatePrice && item.newPrice !== null) {
+          if (item.update_price && item.purchase_price !== null) {
+            priceToUse = item.purchase_price;
+            const sellingPrice = item.selling_price || item.purchase_price * 1.2;
             db.prepare(`
               UPDATE items
               SET quantity = ?, purchase_price = ?, selling_price = ?, updated_at = CURRENT_TIMESTAMP
               WHERE id = ?
-            `).run(newQuantity, item.newPrice, item.newPrice * 1.2, item.itemId);
+            `).run(newQuantity, item.purchase_price, sellingPrice, existingItem.id);
           } else {
             db.prepare(`
               UPDATE items
               SET quantity = ?, updated_at = CURRENT_TIMESTAMP
               WHERE id = ?
-            `).run(newQuantity, item.itemId);
+            `).run(newQuantity, existingItem.id);
           }
 
           totalValue += item.quantity * priceToUse;
           updated++;
-          details.push({
-            itemId: item.itemId,
-            action: 'updated',
-            newQuantity
-          });
-        } else if (item.mode === 'new') {
-          // Create new item
-          const stmt = db.prepare(`
+          details.push({ itemId: existingItem.id, action: 'updated', newQuantity });
+        } else {
+          const purchasePrice = item.purchase_price;
+          const sellingPrice = item.selling_price || item.purchase_price * 1.2;
+
+          const result = db.prepare(`
             INSERT INTO items (name, quantity, purchase_price, selling_price, unit, category_id, low_stock_threshold, description)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          `);
-
-          const purchasePrice = item.price;
-          const sellingPrice = item.price * 1.2;
-
-          const result = stmt.run(
-            item.name,
-            item.quantity,
-            purchasePrice,
-            sellingPrice,
-            item.unit || 'pcs',
-            item.categoryId,
-            10,
-            item.description || ''
-          );
+          `).run(item.name, item.quantity, purchasePrice, sellingPrice, item.unit || 'pcs', item.category_id, 10, item.description || '');
 
           totalValue += item.quantity * purchasePrice;
           created++;
-          details.push({
-            itemId: result.lastInsertRowid,
-            action: 'created',
-            newItemId: result.lastInsertRowid
-          });
+          details.push({ itemId: result.lastInsertRowid, action: 'created', newItemId: result.lastInsertRowid });
         }
         processed++;
       }
