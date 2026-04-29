@@ -7,7 +7,7 @@ const navItems = [
   { path: '/dashboard', label: 'Dasbor', icon: LayoutDashboard },
   { path: '/items', label: 'Barang', icon: Package },
   { path: '/sales', label: 'Penjualan', icon: ShoppingCart },
-  { path: '/batch-add', label: 'Tambah Batch', icon: PackagePlus },
+  { path: '/batch-add', label: 'Input', icon: PackagePlus },
   { path: '/categories', label: 'Kategori', icon: Tags },
 ]
 
@@ -184,13 +184,13 @@ function Layout() {
 
       {/* Mobile Bottom Navigation - Fixed at bottom, visible only on mobile */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-30 safe-area-pb">
-        <div className="flex items-center justify-around py-2">
+        <div className="flex items-center py-1">
           {navItems.map(({ path, label, icon: Icon }) => (
             <NavLink
               key={path}
               to={path}
               className={({ isActive }) =>
-                `flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors min-w-[64px] touch-manipulation ${
+                `flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-lg transition-colors touch-manipulation ${
                   isActive
                     ? 'text-farm-600'
                     : 'text-slate-500'
@@ -198,7 +198,7 @@ function Layout() {
               }
             >
               <Icon className="w-6 h-6" />
-              <span className="text-xs font-medium">{label}</span>
+              <span className="text-[10px] font-medium leading-tight text-center">{label}</span>
             </NavLink>
           ))}
         </div>
