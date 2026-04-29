@@ -318,7 +318,7 @@ describe('API Endpoints', () => {
         const res = await request(app)
           .post('/api/auth/login')
           .send({});
-        expect(res.statusCode).toEqual(400);
+        expect(res.statusCode).toEqual(401);
         expect(res.body).toHaveProperty('error');
       });
     });

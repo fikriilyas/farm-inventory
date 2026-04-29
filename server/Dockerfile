@@ -15,4 +15,4 @@ COPY db ./db/
 
 EXPOSE 3001
 
-CMD ["node", "server.js"]
+CMD ["node", "index.js"]
