@@ -1,5 +1,6 @@
 const request = require('supertest');
 const path = require('path');
+const { seedCategories, seedItems } = require('../src/config/seed');
 
 // Mock the database path for testing
 const dbPath = path.join(__dirname, '..', 'db', 'inventory.test.db');
@@ -14,6 +15,9 @@ describe('API Endpoints', () => {
   let authCookie;
 
   beforeAll(async () => {
+    seedCategories();
+    seedItems();
+
     // Login once for all tests
     const loginRes = await request(app)
       .post('/api/auth/login')

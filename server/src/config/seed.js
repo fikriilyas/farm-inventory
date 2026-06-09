@@ -2,8 +2,6 @@ const bcrypt = require('bcryptjs');
 const db = require('./database');
 
 const seed = () => {
-  seedCategories();
-  seedItems();
   seedUsers();
 };
 
@@ -209,4 +207,4 @@ const seedUsers = () => {
   insertUser.run('officer3', officerHash, 'officer');
 };
 
-module.exports = { seed };
+module.exports = { seed, seedCategories, seedItems, seedUsers };

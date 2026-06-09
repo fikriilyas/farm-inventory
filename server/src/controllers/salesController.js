@@ -38,4 +38,15 @@ const createSale = (req, res) => {
   res.json({ ...result.data, success: true });
 };
 
-module.exports = { getSales, getSaleDetail, createSale };
+const remove = (req, res) => {
+  const { id } = req.params;
+  const result = salesService.deleteSale(id);
+
+  if (!result.success) {
+    return res.status(result.error === 'Sale not found' ? 404 : 500).json({ error: result.error });
+  }
+
+  res.json(result.data);
+};
+
+module.exports = { getSales, getSaleDetail, createSale, remove };

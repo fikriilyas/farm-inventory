@@ -16,6 +16,8 @@ function Items() {
     quantity: 0,
     purchase_price: 0,
     selling_price: 0,
+    groceries_price: 0,
+    groceries_threshold: 0,
     unit: 'pcs',
     category_id: '',
     low_stock_threshold: 10,
@@ -85,6 +87,8 @@ function Items() {
       quantity: item.quantity,
       purchase_price: item.purchase_price,
       selling_price: item.selling_price,
+      groceries_price: item.groceries_price || 0,
+      groceries_threshold: item.groceries_threshold || 0,
       unit: item.unit,
       category_id: item.category_id,
       low_stock_threshold: item.low_stock_threshold,
@@ -111,6 +115,8 @@ function Items() {
       quantity: 0,
       purchase_price: 0,
       selling_price: 0,
+      groceries_price: 0,
+      groceries_threshold: 0,
       unit: 'pcs',
       category_id: '',
       low_stock_threshold: 10,
@@ -295,6 +301,12 @@ function Items() {
                             <span className="text-slate-500">Jual:</span>
                             <span className="font-medium text-slate-800 ml-1">Rp {formatPrice(item.selling_price)}</span>
                           </div>
+                          {item.groceries_price > 0 && (
+                            <div>
+                              <span className="text-slate-500">Grosir:</span>
+                              <span className="font-medium text-purple-700 ml-1">Rp {formatPrice(item.groceries_price)}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -312,6 +324,7 @@ function Items() {
                     <th className="text-left px-6 py-4 font-medium text-slate-600">Jumlah</th>
                     <th className="text-left px-6 py-4 font-medium text-slate-600">Harga Beli</th>
                     <th className="text-left px-6 py-4 font-medium text-slate-600">Harga Jual</th>
+                    <th className="text-left px-6 py-4 font-medium text-slate-600">Harga Grosir</th>
                     <th className="text-left px-6 py-4 font-medium text-slate-600">Status</th>
                     <th className="text-right px-6 py-4 font-medium text-slate-600">Aksi</th>
                   </tr>
@@ -345,6 +358,16 @@ function Items() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-slate-800 font-medium">Rp {formatPrice(item.selling_price)}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {item.groceries_price > 0 ? (
+                            <div>
+                              <span className="text-purple-700 font-medium">Rp {formatPrice(item.groceries_price)}</span>
+                              <span className="text-xs text-slate-400 ml-1">/≥{item.groceries_threshold}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
@@ -482,6 +505,48 @@ function Items() {
                       } else {
                         const num = parseFloat(value.replace(/[^\d.]/g, ''))
                         setFormData({ ...formData, selling_price: isNaN(num) ? 0 : num })
+                      }
+                    }}
+                    placeholder="0"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Harga Grosir (Rp)</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*\.?[0-9]*"
+                    value={formData.groceries_price === 0 ? '' : formData.groceries_price}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      if (value === '') {
+                        setFormData({ ...formData, groceries_price: 0 })
+                      } else {
+                        const num = parseFloat(value.replace(/[^\d.]/g, ''))
+                        setFormData({ ...formData, groceries_price: isNaN(num) ? 0 : num })
+                      }
+                    }}
+                    placeholder="0 = tidak ada"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Min. Grosir (Qty)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={formData.groceries_threshold === 0 ? '' : formData.groceries_threshold}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      if (value === '') {
+                        setFormData({ ...formData, groceries_threshold: 0 })
+                      } else {
+                        const num = parseInt(value.replace(/\D/g, ''))
+                        setFormData({ ...formData, groceries_threshold: isNaN(num) ? 0 : num })
                       }
                     }}
                     placeholder="0"

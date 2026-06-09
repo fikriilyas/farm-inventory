@@ -14,6 +14,8 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
     unit: 'pcs',
     purchase_price: 0,
     selling_price: 0,
+    groceries_price: 0,
+    groceries_threshold: 0,
     update_price: false
   })
   const [errors, setErrors] = useState({})
@@ -45,6 +47,8 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
       unit: 'pcs',
       purchase_price: 0,
       selling_price: 0,
+      groceries_price: 0,
+      groceries_threshold: 0,
       update_price: false
     })
     setErrors({})
@@ -78,6 +82,8 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
       unit: product.unit || 'pcs',
       purchase_price: product.purchase_price,
       selling_price: product.selling_price,
+      groceries_price: product.groceries_price || 0,
+      groceries_threshold: product.groceries_threshold || 0,
       update_price: false
     })
     setSearchQuery(product.name)
@@ -120,6 +126,8 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
       unit: formData.unit,
       purchase_price: parseFloat(formData.purchase_price),
       selling_price: parseFloat(formData.selling_price),
+      groceries_price: parseFloat(formData.groceries_price) || 0,
+      groceries_threshold: parseInt(formData.groceries_threshold) || 0,
       update_price: formData.update_price
     })
 
@@ -301,6 +309,32 @@ function AddProductModal({ isOpen, onClose, onAdd }) {
                   placeholder="0"
                   className="w-full px-4 py-2.5 border border-farm-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Harga Grosir (Rp)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="100"
+                    value={formData.groceries_price || ''}
+                    onChange={(e) => handleInputChange('groceries_price', e.target.value)}
+                    placeholder="0"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Min. Grosir (Qty)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.groceries_threshold || ''}
+                    onChange={(e) => handleInputChange('groceries_threshold', e.target.value)}
+                    placeholder="0"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500"
+                  />
+                </div>
               </div>
             </div>
           ) : (

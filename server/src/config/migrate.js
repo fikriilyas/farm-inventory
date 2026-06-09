@@ -16,6 +16,8 @@ const migrate = () => {
       quantity INTEGER NOT NULL DEFAULT 0,
       purchase_price REAL NOT NULL DEFAULT 0,
       selling_price REAL NOT NULL DEFAULT 0,
+      groceries_price REAL NOT NULL DEFAULT 0,
+      groceries_threshold INTEGER DEFAULT 0,
       unit TEXT DEFAULT 'pcs',
       category_id INTEGER,
       low_stock_threshold INTEGER DEFAULT 10,
@@ -54,6 +56,7 @@ const migrate = () => {
   `);
 
   migrateItemsPriceColumn();
+  migrateGroceriesColumns();
 };
 
 const migrateItemsPriceColumn = () => {
@@ -68,6 +71,22 @@ const migrateItemsPriceColumn = () => {
         ALTER TABLE items ADD COLUMN selling_price REAL NOT NULL DEFAULT 0;
         UPDATE items SET selling_price = purchase_price * 1.25;
       `);
+    }
+  } catch (error) {
+  }
+};
+
+const migrateGroceriesColumns = () => {
+  try {
+    const tableInfo = db.prepare("PRAGMA table_info(items)").all();
+    const hasGroceriesPrice = tableInfo.some(col => col.name === 'groceries_price');
+    const hasGroceriesThreshold = tableInfo.some(col => col.name === 'groceries_threshold');
+
+    if (!hasGroceriesPrice) {
+      db.exec('ALTER TABLE items ADD COLUMN groceries_price REAL NOT NULL DEFAULT 0');
+    }
+    if (!hasGroceriesThreshold) {
+      db.exec('ALTER TABLE items ADD COLUMN groceries_threshold INTEGER DEFAULT 0');
     }
   } catch (error) {
   }

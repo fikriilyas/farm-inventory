@@ -14,6 +14,8 @@
  * @property {number} quantity
  * @property {number} purchase_price
  * @property {number} selling_price
+ * @property {number} groceries_price
+ * @property {number} groceries_threshold
  * @property {string} unit
  * @property {number} category_id
  * @property {number} low_stock_threshold

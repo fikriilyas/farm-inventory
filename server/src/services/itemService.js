@@ -55,22 +55,23 @@ const getById = (id) => {
 const create = (data) => {
   try {
     const {
-      name, quantity, purchase_price, selling_price, unit, category_id,
-      low_stock_threshold, description
+      name, quantity, purchase_price, selling_price, groceries_price, groceries_threshold,
+      unit, category_id, low_stock_threshold, description
     } = data;
     const stmt = db.prepare(`
-      INSERT INTO items (name, quantity, purchase_price, selling_price, unit, category_id, low_stock_threshold, description)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO items (name, quantity, purchase_price, selling_price, groceries_price, groceries_threshold, unit, category_id, low_stock_threshold, description)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const result = stmt.run(
-      name, quantity, purchase_price, selling_price, unit, category_id,
-      low_stock_threshold, description
+      name, quantity, purchase_price, selling_price, groceries_price || 0, groceries_threshold || 0,
+      unit, category_id, low_stock_threshold, description
     );
     return {
       success: true,
       data: {
         id: result.lastInsertRowid, name, quantity, purchase_price,
-        selling_price, unit, category_id, low_stock_threshold, description
+        selling_price, groceries_price: groceries_price || 0, groceries_threshold: groceries_threshold || 0,
+        unit, category_id, low_stock_threshold, description
       }
     };
   } catch (error) {
@@ -81,24 +82,25 @@ const create = (data) => {
 const update = (id, data) => {
   try {
     const {
-      name, quantity, purchase_price, selling_price, unit, category_id,
-      low_stock_threshold, description
+      name, quantity, purchase_price, selling_price, groceries_price, groceries_threshold,
+      unit, category_id, low_stock_threshold, description
     } = data;
     const stmt = db.prepare(`
       UPDATE items
-      SET name = ?, quantity = ?, purchase_price = ?, selling_price = ?, unit = ?, category_id = ?,
-          low_stock_threshold = ?, description = ?, updated_at = CURRENT_TIMESTAMP
+      SET name = ?, quantity = ?, purchase_price = ?, selling_price = ?, groceries_price = ?, groceries_threshold = ?,
+          unit = ?, category_id = ?, low_stock_threshold = ?, description = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
     stmt.run(
-      name, quantity, purchase_price, selling_price, unit, category_id,
-      low_stock_threshold, description, id
+      name, quantity, purchase_price, selling_price, groceries_price || 0, groceries_threshold || 0,
+      unit, category_id, low_stock_threshold, description, id
     );
     return {
       success: true,
       data: {
-        id, name, quantity, purchase_price, selling_price, unit,
-        category_id, low_stock_threshold, description
+        id, name, quantity, purchase_price, selling_price,
+        groceries_price: groceries_price || 0, groceries_threshold: groceries_threshold || 0,
+        unit, category_id, low_stock_threshold, description
       }
     };
   } catch (error) {
@@ -139,14 +141,16 @@ const batchAdd = (batchData) => {
           const newQuantity = existingItem.quantity + item.quantity;
           let priceToUse = existingItem.purchase_price;
 
-          if (item.update_price && item.purchase_price !== null) {
+          if (item.update_price && item.purchase_price !== null && item.purchase_price !== undefined) {
             priceToUse = item.purchase_price;
             const sellingPrice = item.selling_price || item.purchase_price * 1.2;
+            const groceriesPrice = item.groceries_price || 0;
+            const groceriesThreshold = item.groceries_threshold || 0;
             db.prepare(`
               UPDATE items
-              SET quantity = ?, purchase_price = ?, selling_price = ?, updated_at = CURRENT_TIMESTAMP
+              SET quantity = ?, purchase_price = ?, selling_price = ?, groceries_price = ?, groceries_threshold = ?, updated_at = CURRENT_TIMESTAMP
               WHERE id = ?
-            `).run(newQuantity, item.purchase_price, sellingPrice, existingItem.id);
+            `).run(newQuantity, item.purchase_price, sellingPrice, groceriesPrice, groceriesThreshold, existingItem.id);
           } else {
             db.prepare(`
               UPDATE items
@@ -163,9 +167,9 @@ const batchAdd = (batchData) => {
           const sellingPrice = item.selling_price || item.purchase_price * 1.2;
 
           const result = db.prepare(`
-            INSERT INTO items (name, quantity, purchase_price, selling_price, unit, category_id, low_stock_threshold, description)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          `).run(item.name, item.quantity, purchasePrice, sellingPrice, item.unit || 'pcs', item.category_id, 10, item.description || '');
+            INSERT INTO items (name, quantity, purchase_price, selling_price, groceries_price, groceries_threshold, unit, category_id, low_stock_threshold, description)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(item.name, item.quantity, purchasePrice, sellingPrice, item.groceries_price || 0, item.groceries_threshold || 0, item.unit || 'pcs', item.category_id, item.low_stock_threshold || 10, item.description || '');
 
           totalValue += item.quantity * purchasePrice;
           created++;

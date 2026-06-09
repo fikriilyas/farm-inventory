@@ -2,7 +2,9 @@ FROM node:20-bookworm
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y python3 make g++ tzdata && rm -rf /var/lib/apt/lists/*
+
+ENV TZ=Asia/Bangkok
 
 COPY package.json ./
 RUN npm install --omit=dev --ignore-scripts && \
