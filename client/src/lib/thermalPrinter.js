@@ -82,25 +82,66 @@ export async function printViaBluetooth(sale) {
     throw new Error('BLUETOOTH_NOT_AVAILABLE')
   }
 
+  console.log('[BT] Requesting device...')
   const device = await navigator.bluetooth.requestDevice({
     acceptAllDevices: true,
-    optionalServices: ['00001101-0000-1000-8000-00805f9b34fb']
+    optionalServices: [0x1101]
   })
+  console.log('[BT] Device selected:', device.name, device.id)
 
+  console.log('[BT] Connecting GATT...')
   const server = await device.gatt.connect()
-  const service = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb')
-  const characteristic = await service.getCharacteristic('00001101-0000-1000-8000-00805f9b34fb')
+  console.log('[BT] GATT connected')
 
-  const text = buildReceiptText(sale)
-  const encoder = new TextEncoder()
-  const data = encoder.encode(text)
+  const SPP_SERVICE = '00001101-0000-1000-8000-00805f9b34fb'
 
-  const mtu = 512
-  for (let i = 0; i < data.length; i += mtu) {
-    await characteristic.writeValue(data.slice(i, i + mtu))
+  console.log('[BT] Getting primary service...')
+  const service = await server.getPrimaryService(SPP_SERVICE)
+  console.log('[BT] Service obtained')
+
+  console.log('[BT] Listing characteristics...')
+  const chars = await service.getCharacteristics()
+  let writeChar = null
+  for (const c of chars) {
+    console.log('[BT]   char:', c.uuid, 'props:', JSON.stringify(c.properties))
+    if (c.properties.write || c.properties.writeWithoutResponse) {
+      writeChar = c
+    }
   }
 
+  if (!writeChar) {
+    throw new Error('No writable characteristic found on printer')
+  }
+
+  const useWriteWithoutResponse = writeChar.properties.writeWithoutResponse
+  console.log('[BT] Write method:', useWriteWithoutResponse ? 'writeWithoutResponse' : 'writeValue')
+
+  const escInit = new Uint8Array([0x1B, 0x40])
+  const escFeedCut = new Uint8Array([0x1D, 0x56, 66, 3])
+
+  const text = buildReceiptText(sale).replace(/\n/g, '\r\n')
+  const encoder = new TextEncoder()
+  const textData = encoder.encode(text)
+
+  const data = new Uint8Array(escInit.length + textData.length + escFeedCut.length)
+  data.set(escInit, 0)
+  data.set(textData, escInit.length)
+  data.set(escFeedCut, escInit.length + textData.length)
+
+  console.log('[BT] Writing', data.length, 'bytes...')
+  const mtu = 512
+  for (let i = 0; i < data.length; i += mtu) {
+    const chunk = data.slice(i, Math.min(i + mtu, data.length))
+    if (useWriteWithoutResponse) {
+      await writeChar.writeValueWithoutResponse(chunk)
+    } else {
+      await writeChar.writeValue(chunk)
+    }
+  }
+  console.log('[BT] Write complete')
+
   device.gatt.disconnect()
+  console.log('[BT] Disconnected')
   return true
 }
 
