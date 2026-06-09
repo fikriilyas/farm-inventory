@@ -3,7 +3,7 @@ const db = require('../config/database');
 const getSales = (date) => {
   try {
     const sales = db.prepare(`
-      SELECT s.id, s.total_amount, s.total_profit, s.created_at,
+      SELECT s.id, s.total_amount, s.total_profit, strftime('%Y-%m-%dT%H:%M:%SZ', s.created_at) as created_at,
              (SELECT COUNT(*) FROM sale_items WHERE sale_id = s.id) as item_count
       FROM sales s
       WHERE DATE(s.created_at) = ?
@@ -26,7 +26,7 @@ const getSales = (date) => {
 
 const getSaleDetail = (id) => {
   try {
-    const sale = db.prepare('SELECT * FROM sales WHERE id = ?').get(id);
+    const sale = db.prepare(`SELECT id, total_amount, total_profit, strftime('%Y-%m-%dT%H:%M:%SZ', created_at) as created_at FROM sales WHERE id = ?`).get(id);
     if (!sale) return { success: false, error: 'Sale not found' };
 
     const items = db.prepare(`
@@ -57,7 +57,8 @@ const createSale = (saleItems) => {
         }
 
         const quantity = entry.quantity;
-        const unitPrice = entry.unit_price || item.selling_price;
+        const useGroceries = item.groceries_price > 0 && quantity >= item.groceries_threshold;
+        const unitPrice = entry.unit_price || (useGroceries ? item.groceries_price : item.selling_price);
         const subtotal = quantity * unitPrice;
         const profit = (unitPrice - item.purchase_price) * quantity;
 
@@ -73,10 +74,11 @@ const createSale = (saleItems) => {
 
       for (const entry of saleItems) {
         const item = db.prepare('SELECT * FROM items WHERE id = ?').get(entry.item_id);
+        const useGroceries = item.groceries_price > 0 && entry.quantity >= item.groceries_threshold;
         db.prepare(`
           INSERT INTO sale_items (sale_id, item_id, quantity, unit_price, purchase_price, subtotal)
           VALUES (?, ?, ?, ?, ?, ?)
-        `).run(saleId, entry.item_id, entry.quantity, entry.unit_price || item.selling_price, item.purchase_price, entry.quantity * (entry.unit_price || item.selling_price));
+        `).run(saleId, entry.item_id, entry.quantity, useGroceries ? (entry.unit_price || item.groceries_price) : (entry.unit_price || item.selling_price), item.purchase_price, entry.quantity * (useGroceries ? (entry.unit_price || item.groceries_price) : (entry.unit_price || item.selling_price)));
       }
 
       return { sale_id: saleId, total_amount: totalAmount, total_profit: totalProfit, items: saleDetails };
@@ -89,4 +91,30 @@ const createSale = (saleItems) => {
   }
 };
 
-module.exports = { getSales, getSaleDetail, createSale };
+const deleteSale = (id) => {
+  try {
+    const sale = db.prepare('SELECT * FROM sales WHERE id = ?').get(id);
+    if (!sale) return { success: false, error: 'Sale not found' };
+
+    const runDelete = db.transaction(() => {
+      const items = db.prepare('SELECT item_id, quantity FROM sale_items WHERE sale_id = ?').all(id);
+
+      for (const item of items) {
+        db.prepare('UPDATE items SET quantity = quantity + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+          .run(item.quantity, item.item_id);
+      }
+
+      db.prepare('DELETE FROM sale_items WHERE sale_id = ?').run(id);
+      db.prepare('DELETE FROM sales WHERE id = ?').run(id);
+
+      return { deleted: true, stockRestored: items.length };
+    });
+
+    const result = runDelete();
+    return { success: true, data: result };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+module.exports = { getSales, getSaleDetail, createSale, deleteSale };

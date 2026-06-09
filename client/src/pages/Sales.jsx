@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Plus, X, Trash2, Edit2, Check, Package, CheckCircle, AlertTriangle, ShoppingCart, CalendarDays, ChevronLeft, ChevronRight, Eye } from 'lucide-react'
-import { createSale, getSales, getSaleDetail } from '../lib/api'
+import { Plus, X, Trash2, Edit2, Check, Package, CheckCircle, AlertTriangle, ShoppingCart, CalendarDays, ChevronLeft, ChevronRight, Eye, Printer } from 'lucide-react'
+import { createSale, getSales, getSaleDetail, deleteSale } from '../lib/api'
+import { printViaBluetooth, printViaBrowser } from '../lib/thermalPrinter'
 import SaleProductModal from '../components/SaleProductModal'
 
 function Sales() {
@@ -24,6 +25,8 @@ function Sales() {
   const [selectedSale, setSelectedSale] = useState(null)
   const [detailItems, setDetailItems] = useState([])
   const [detailLoading, setDetailLoading] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [saleToDelete, setSaleToDelete] = useState(null)
 
   // ============ SALE TAB FUNCTIONS ============
 
@@ -192,6 +195,44 @@ function Sales() {
       console.error('Failed to load detail:', error)
     } finally {
       setDetailLoading(false)
+    }
+  }
+
+  const handleDeleteClick = (sale) => {
+    setSaleToDelete(sale)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!saleToDelete) return
+    try {
+      await deleteSale(saleToDelete.id)
+      setShowDeleteModal(false)
+      setSaleToDelete(null)
+      loadHistory()
+    } catch (error) {
+      console.error('Failed to delete sale:', error)
+      setShowDeleteModal(false)
+      setSaleToDelete(null)
+    }
+  }
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false)
+    setSaleToDelete(null)
+  }
+
+  const handlePrint = async () => {
+    if (!selectedSale) return
+    try {
+      await printViaBluetooth(selectedSale)
+    } catch (err) {
+      if (err.message === 'BLUETOOTH_NOT_SUPPORTED' || !navigator.bluetooth) {
+        printViaBrowser(selectedSale)
+      } else {
+        console.error('Bluetooth print failed, falling back to browser:', err)
+        printViaBrowser(selectedSale)
+      }
     }
   }
 
@@ -599,12 +640,20 @@ function Sales() {
                           <span className="text-green-600">Rp {formatCurrency(sale.total_profit)}</span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => handleViewDetail(sale.id)}
-                            className="p-2 text-slate-400 hover:text-farm-600 hover:bg-farm-50 rounded-lg transition-colors touch-manipulation"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleViewDetail(sale.id)}
+                              className="p-2 text-slate-400 hover:text-farm-600 hover:bg-farm-50 rounded-lg transition-colors touch-manipulation"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(sale)}
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors touch-manipulation"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -674,13 +723,53 @@ function Sales() {
                   )}
                 </div>
 
-                <div className="p-4 md:p-6 border-t border-slate-200">
+                <div className="p-4 md:p-6 border-t border-slate-200 flex gap-3">
+                  <button
+                    onClick={handlePrint}
+                    className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors touch-manipulation flex items-center justify-center gap-2"
+                  >
+                    <Printer className="w-4 h-4" />
+                    Cetak
+                  </button>
                   <button
                     onClick={() => { setSelectedSale(null); setDetailItems([]) }}
-                    className="w-full py-3 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors touch-manipulation"
+                    className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors touch-manipulation"
                   >
                     Tutup
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* Delete Confirmation Modal */}
+          {showDeleteModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50">
+              <div className="bg-white rounded-t-2xl md:rounded-xl w-full md:max-w-sm max-h-[90vh] overflow-auto">
+                <div className="p-4 md:p-6 text-center">
+                  <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                    <Trash2 className="w-6 h-6 text-red-600" />
+                  </div>
+                  <h3 className="text-lg md:text-xl font-semibold text-slate-800 mb-2">
+                    Hapus Transaksi?
+                  </h3>
+                  <p className="text-slate-500 mb-6">
+                    Apakah Anda yakin ingin menghapus transaksi <strong>#{saleToDelete?.id}</strong>? 
+                    Stok barang akan dikembalikan.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={cancelDelete}
+                      className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors touch-manipulation"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={confirmDelete}
+                      className="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors touch-manipulation"
+                    >
+                      Hapus
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

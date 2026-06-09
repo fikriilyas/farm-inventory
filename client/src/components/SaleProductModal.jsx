@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, X } from 'lucide-react'
+import { Search, X, Tag } from 'lucide-react'
 import { getItems } from '../lib/api'
 
 function SaleProductModal({ isOpen, onClose, onAdd }) {
@@ -179,6 +179,14 @@ function SaleProductModal({ isOpen, onClose, onAdd }) {
                   <span className="text-slate-500">Harga Jual:</span>
                   <span className="ml-1 text-slate-700 font-medium">Rp {selectedProduct.selling_price?.toLocaleString('id-ID')}</span>
                 </div>
+                {selectedProduct.groceries_price > 0 && (
+                  <div className="col-span-2">
+                    <span className="inline-flex items-center gap-1 text-sm text-purple-700 bg-purple-50 px-2 py-0.5 rounded">
+                      <Tag className="w-3 h-3" />
+                      <span>Grosir: Rp {selectedProduct.groceries_price?.toLocaleString('id-ID')} / min. {selectedProduct.groceries_threshold} {selectedProduct.unit}</span>
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -191,7 +199,18 @@ function SaleProductModal({ isOpen, onClose, onAdd }) {
                 type="text"
                 inputMode="numeric"
                 value={quantity || ''}
-                onChange={(e) => setQuantity(e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => {
+                  const newQty = e.target.value.replace(/\D/g, '')
+                  setQuantity(newQty)
+                  const qtyNum = parseInt(newQty) || 0
+                  if (selectedProduct?.groceries_price > 0 && qtyNum >= selectedProduct.groceries_threshold) {
+                    setUnitPrice(selectedProduct.groceries_price)
+                  } else if (selectedProduct && qtyNum > 0) {
+                    setUnitPrice(Math.round(selectedProduct.selling_price))
+                  } else if (selectedProduct && !newQty) {
+                    setUnitPrice(0)
+                  }
+                }}
                 placeholder="0"
                 className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-500 ${
                   errors.quantity ? 'border-red-300' : 'border-slate-200'
@@ -212,6 +231,15 @@ function SaleProductModal({ isOpen, onClose, onAdd }) {
                 }`}
               />
               {errors.unitPrice && <p className="text-xs text-red-600 mt-1">{errors.unitPrice}</p>}
+              {selectedProduct?.groceries_price > 0 && quantity > 0 && parseInt(quantity) >= selectedProduct.groceries_threshold ? (
+                <p className="text-xs text-purple-600 mt-1">
+                  Harga grosir diterapkan! Min. beli {selectedProduct.groceries_threshold} {selectedProduct.unit} untuk Rp {selectedProduct.groceries_price?.toLocaleString('id-ID')}
+                </p>
+              ) : selectedProduct?.groceries_price > 0 && (
+                <p className="text-xs text-slate-400 mt-1">
+                  Beli min. {selectedProduct.groceries_threshold} {selectedProduct.unit} untuk harga grosir Rp {selectedProduct.groceries_price?.toLocaleString('id-ID')}
+                </p>
+              )}
             </div>
           </div>
 
