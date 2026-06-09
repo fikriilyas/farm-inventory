@@ -98,5 +98,9 @@ export const createSale = (saleData) =>
     return res.json()
   })
 
+export const deleteSale = (id) => fetchWithCredentials(`${API_BASE}/sales/${id}`, {
+  method: 'DELETE'
+}).then(res => res.json())
+
 // Stats
 export const getStats = () => fetchWithCredentials(`${API_BASE}/stats`).then(res => res.json())
